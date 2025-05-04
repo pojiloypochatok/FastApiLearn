@@ -2,10 +2,14 @@ import sys
 import logging
 import jwt
 import datetime
-from fastapi import Depends
+from fastapi import Depends, Request
+from fastapi.params import Cookie
 from fastapi.security import OAuth2PasswordBearer
 from typing import Dict
 from passlib.context import CryptContext
+
+
+import fakedb.DB_Users
 
 logger = logging.getLogger("uvicorn")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
@@ -19,13 +23,13 @@ def create_jwt_token(data: Dict):
     to_encode = data.copy()
     expire = datetime.datetime.utcnow() + datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
-    logger.error("токен создан")
+    logger.info("токен создан")
     return jwt.encode(to_encode, secret_key, algorithm=ALGORITHM)
 
-def get_user_from_token(token: str = Depends(oauth2_scheme)):
+def get_user_from_token(token: Cookie() = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(token, secret_key, algorithms=[ALGORITHM])
-        return payload.get("sub")
+        return fakedb.DB_Users.search_user_from_username(payload.get("sub"))
     except jwt.ExpiredSignatureError:
         logger.error("SignatureError")
         pass
