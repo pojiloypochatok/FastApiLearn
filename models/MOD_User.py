@@ -3,12 +3,8 @@ from pydantic import BaseModel
 class User(BaseModel):
     username: str
     password: str
-    role: list
+    role: str
 
-class RegUserInDb(BaseModel):
-    username: str
-    password: str
-    role: list
 
 
 

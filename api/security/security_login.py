@@ -8,9 +8,6 @@ from fastapi.security import OAuth2PasswordBearer
 from typing import Dict
 from passlib.context import CryptContext
 
-
-import fakedb.DB_Users
-
 logger = logging.getLogger("uvicorn")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -29,7 +26,7 @@ def create_jwt_token(data: Dict):
 def get_user_from_token(token: Cookie() = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(token, secret_key, algorithms=[ALGORITHM])
-        return fakedb.DB_Users.search_user_from_username(payload.get("sub"))
+        #return fakedb.DB_Users.search_user_from_username(payload.get("sub"))
     except jwt.ExpiredSignatureError:
         logger.error("SignatureError")
         pass

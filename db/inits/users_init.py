@@ -1,12 +1,8 @@
-from sqlalchemy.testing.schema import mapped_column
-import asyncio
-
-import db.database
-from db.database import Base
-from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import Mapped, mapped_column
+from .base import Base
 
 
-class UsersModelDB(Base):
+class Users(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -14,8 +10,4 @@ class UsersModelDB(Base):
     password: Mapped[str]
     role: Mapped[str]
 
-async def main():
-    await db.database.setup_databes()
 
-if __name__ == "__user_init__":
-    asyncio.run(main())

@@ -1,37 +1,40 @@
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, async_scoped_session
+from sqlalchemy.log import echo_property
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 import asyncio
+from asyncio import current_task
 
-DB_NAME = "FastAPILearn"
-engine = create_async_engine(f'sqlite+aiosqlite:///{DB_NAME}.db')
-
-new_session = async_sessionmaker(engine, expire_on_commit=False)
-
-async def get_session():
-    async with new_session() as session:
-        yield session
-
-
-class Base(DeclarativeBase):
-    pass
-
-async def setup_databes():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+from .config import settings
 
 
 
-"""inits"""
-class UsersModelDB(Base):
-    __tablename__ = "users"
+class DatabaseHelper:
+    def __init__(self, db_url: str, echo: bool = True):
+        self.engine =  create_async_engine(
+            url=db_url,
+            echo=echo
+        )
+        self.session_factory = async_sessionmaker(
+            bind=self.engine,
+            autoflush=False,
+            autocommit=False,
+            expire_on_commit=False
+        )
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    username: Mapped[str]
-    password: Mapped[str]
-    role: Mapped[str]
-
-asyncio.run(setup_databes())
-
-
+    def get_scoped_session(self):
+        session = async_scoped_session(
+            session_factory=self.session_factory,
+            scopefunc=current_task
+        )
+        return session
 
 
+    async def session_dependency(self):
+        session = self.get_scoped_session()
+        try:
+            yield session
+        finally:
+            await session.close()
+
+
+db_engine_session = DatabaseHelper(settings.db_url, settings.echo)
