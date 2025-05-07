@@ -10,7 +10,7 @@ from .config import settings
 
 class DatabaseHelper:
     def __init__(self, db_url: str, echo: bool = True):
-        self.engine =  create_async_engine(
+        self.engine = create_async_engine(
             url=db_url,
             echo=echo
         )

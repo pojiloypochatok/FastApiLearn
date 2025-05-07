@@ -9,9 +9,8 @@ from slowapi.errors import RateLimitExceeded
 from functools import wraps
 
 
-import fakedb.DB_Users
 from models import MOD_Headers
-from models.MOD_User import User, RegUserInDb
+from models.MOD_User import User
 from api.security.security_login import create_jwt_token, get_user_from_token, check_password, hash_password
 
 
@@ -87,7 +86,7 @@ def about_me(current_user: str = Depends(get_user_from_token)):
 @app.post("/register")
 @limiter.limit("1/minute")
 def register(request: Request,reg_user: RegUserInDb):
-    if fakedb.DB_Users.check_user(reg_user.username):
+    if (reg_user.username):
         raise HTTPException(status_code=409, detail="Пользователь с таким именем уже существует")
     reg_user.password = hash_password(reg_user.password)
     fakedb.DB_Users.create_new_user(reg_user)

@@ -3,14 +3,14 @@ from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.MOD_User import User
+from db.inits.users_init import Users
 from api.security.security_login import check_password
 
-async def search_user_from_username(session: AsyncSession, username_in):
-    return await session.get(User, username_in)
 
-async def search_user(session: AsyncSession, user_for_search):
-    search_user_from_username()
-
+async def exit_user(session: AsyncSession, username_in: str):
+    stmt = select(Users).where(Users.username == username_in)
+    result = await session.execute(stmt)
+    return result.scalars().first()
 
 """
 def check_user(username):
@@ -28,7 +28,8 @@ def dump_db():
 
 
 async def create_new_user(session: AsyncSession, user: User):
-    session.add(User)
+    new_user = Users(**user.model_dump())
+    session.add(new_user)
     await session.commit()
 
 

@@ -10,6 +10,7 @@ from slowapi.errors import RateLimitExceeded
 from functools import wraps
 import uvicorn
 from contextlib import asynccontextmanager
+import asyncio
 
 
 from models import MOD_Headers
@@ -94,11 +95,11 @@ def about_me(current_user: str = Depends(get_user_from_token)):
 
 @app.post("/register")
 @limiter.limit("1/minute")
-def register(request: Request,reg_user: User, session: AsyncSession = Depends(db_engine_session.session_dependency)):
-    if user_crud.search_user_from_username(session, reg_user.username):
+async def register(request: Request, reg_user: User, session: AsyncSession = Depends(db_engine_session.session_dependency)):
+    if await user_crud.exit_user(session, reg_user.username):
         raise HTTPException(status_code=409, detail="Пользователь с таким именем уже существует")
     reg_user.password = hash_password(reg_user.password)
-    user_crud.create_new_user(reg_user)
+    await user_crud.create_new_user(session, reg_user)
     return {"message": f"Успешная регистрация; {reg_user.password}"}
 
 @app.get("/dump_db")
@@ -111,8 +112,8 @@ def protected_resource(token = Cookie()):
     return {"message": "Молодец, ты админ!"}
 
 @app.post("/search_from_username")
-def search_from_username(username: str, session: AsyncSession = Depends(db_engine_session.session_dependency)):
-    return (user_crud.search_user_from_username(session, username))
+async def search_from_username(username: str, session: AsyncSession = Depends(db_engine_session.session_dependency)):
+   return await (user_crud.search_user_from_username(session, username))
 
 
 
