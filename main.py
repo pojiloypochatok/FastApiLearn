@@ -74,21 +74,21 @@ def info(header: Annotated[MOD_Headers.CommonHeaders, Header()]):
 
 @app.post("/login")
 @limiter.limit("5/minute")
-def login(request: Request, user_in: User, response: Response):
-    response_from_db = fakedb.DB_Users.search_user(user_in)
+def login(request: Request, user_in: User, response: Response, session: AsyncSession = Depends(db_engine_session.session_dependency)):
+    response_from_db = user_crud.login_user(session, user_in)
     if response_from_db is None:
         raise HTTPException(status_code=401, detail="Такой пользователь не зарегестрирован")
     else:
         token = create_jwt_token({"sub": user_in.username})
-        response.set_cookie(key="token", value=f"{token}",httponly=True,secure=True)
-        return {"access_token": token, "token_tyoe": "bearer"}, response
+        response.set_cookie(key="token", value=token, httponly=True, secure=True)
+        return {"access_token": token, "token_type": "bearer"}, response
 
 
 @app.post("/about_me")
-def about_me(current_user: str = Depends(get_user_from_token)):
+async def about_me(current_user: str = Depends(get_user_from_token), session: AsyncSession = Depends(db_engine_session.session_dependency)):
     if current_user is None:
         raise HTTPException(status_code=401)
-    user = fakedb.DB_Users.search_user_from_username(current_user)
+    user = await user_crud.search_user_from_username(session, current_user)
     logger.info(f"{user}")
     if user:
         return user
@@ -108,7 +108,7 @@ def dump():
 
 @app.get("/protected_resource")
 @PermissionChecker(["admin"])
-def protected_resource(token = Cookie()):
+def protected_resource(token=Cookie()):
     return {"message": "Молодец, ты админ!"}
 
 @app.post("/search_from_username")

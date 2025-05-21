@@ -33,6 +33,18 @@ async def create_new_user(session: AsyncSession, user: User):
     await session.commit()
 
 
+async def search_user_from_username(session: AsyncSession, username_in: str):
+    stmt = select(Users).where(Users.username == username_in)
+    result = await session.execute(stmt)
+    user_obj = result.scalar_one_or_none()
+    return User.model_validate(user_obj)
+
+
+async def login_user(session: AsyncSession, user_in: User):
+    user = await search_user_from_username(session, user_in.username)
+    if check_password(user_in.password, user.password):
+        return await user
+
 
 
 
